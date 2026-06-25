@@ -1,5 +1,9 @@
-# api: 'https://npp.gov.in/dashBoard/demandmet1chartdata?date=2026-06-08'
-# Rate Limiting: Must include deliberate delays (e.g., maximum 2 requests per second) to prevent IP blocking.
+# data is already here so don't ping the servers again!
+# comment it when needed
+print("data is available in `data/` don't ping the poor servers _|_")
+exit()
+
+
 from datetime import datetime, timedelta
 import time
 import pandas as pd
@@ -7,7 +11,7 @@ import requests
 from tqdm import tqdm
 
 BASE_URL = "https://npp.gov.in/dashBoard/demandmet1chartdata"
-start_date = datetime(2025,6,25)
+start_date = datetime(2026,6,24)
 end_date= datetime(2026,6,25)
 output_file = "data/demand_met_year.csv"
 
@@ -23,7 +27,6 @@ print("Fetching for ",len(dates), " days.....\n")
 
 for st_date in tqdm(dates):
     params = {"date": st_date}
-    
     try:
         response = requests.get(BASE_URL,params=params,timeout=13) #13 sec timeout for 1 request
 
@@ -60,4 +63,5 @@ if all_records:
 
     print("success. saved ",len(df)," rows to ", output_file)
 else:
+    print(all_records)
     print("no data:(")

@@ -1,5 +1,3 @@
-### use uv
+### Dataset
 
-```
-uv run main.py
-```
+https://www.kaggle.com/datasets/jitendradara12/demand-met-from-sep25

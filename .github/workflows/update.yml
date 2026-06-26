@@ -36,7 +36,7 @@ jobs:
 
       - name: Push Updated Data to Kaggle
         env:
-          KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
+          KAGGLE_USERNAME: jitendradara12
           KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
         run: |
           kaggle datasets version -p . -m "Automated daily update for $(date +'%Y-%m-%d')"

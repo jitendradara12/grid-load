@@ -8,6 +8,8 @@ on:
 jobs:
   update-dataset:
     runs-on: ubuntu-latest
+    env:
+      KAGGLE_API_TOKEN: ${{ secrets.KAGGLE_TOKEN }}
 
     steps:
       - name: Set up Python
@@ -24,20 +26,6 @@ jobs:
         run: |
           curl -O https://raw.githubusercontent.com/jitendradara12/grid-load/master/scripts/fetch_yesterday.py
           curl -O https://raw.githubusercontent.com/jitendradara12/grid-load/master/data/dataset-metadata.json
-
-      - name: Configure Kaggle Credentials
-        run: |
-          mkdir -p ~/.kaggle
-          echo '{"username":"jitendradara12","key":"placeholder"}' > ~/.kaggle/kaggle.json
-          printf '%s' "${{ secrets.KAGGLE_TOKEN }}" > ~/.kaggle/access_token
-          chmod 600 ~/.kaggle/kaggle.json ~/.kaggle/access_token
-
-      - name: Debug Kaggle Auth
-        run: |
-          echo "access_token file size: $(wc -c < ~/.kaggle/access_token) bytes"
-          echo "access_token starts with: $(head -c 5 ~/.kaggle/access_token)"
-          echo "kaggle version: $(kaggle --version)"
-          kaggle config view || true
 
       - name: Download and Unzip Kaggle Dataset
         run: kaggle datasets download -d jitendradara12/demand-met-from-sep25 --unzip

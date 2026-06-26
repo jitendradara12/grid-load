@@ -24,10 +24,13 @@ jobs:
         run: |
           curl -O https://raw.githubusercontent.com/jitendradara12/grid-load/master/scripts/fetch_yesterday.py
           curl -O https://raw.githubusercontent.com/jitendradara12/grid-load/master/data/dataset-metadata.json
+      - name: Configure Kaggle Credentials
+        run: |
+          mkdir -p ~/.kaggle
+          echo '{"username":"${{ secrets.KAGGLE_USERNAME }}","key":"${{ secrets.KAGGLE_KEY }}"}' > ~/.kaggle/kaggle.json
+          chmod 600 ~/.kaggle/kaggle.json
+
       - name: Download and Unzip Kaggle Dataset
-        env:
-          KAGGLE_USERNAME: jitendradara12
-          KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
         run: |
           kaggle datasets download -d jitendradara12/demand-met-from-sep25 --unzip
 
@@ -35,8 +38,5 @@ jobs:
         run: python fetch_yesterday.py
 
       - name: Push Updated Data to Kaggle
-        env:
-          KAGGLE_USERNAME: jitendradara12
-          KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
         run: |
           kaggle datasets version -p . -m "Automated daily update for $(date +'%Y-%m-%d')"

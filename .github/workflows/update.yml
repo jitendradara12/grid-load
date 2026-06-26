@@ -18,50 +18,24 @@ jobs:
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
-          # Kaggle 2.x prefers short-lived OAuth tokens. In CI that silently
-          # falls back to legacy API-key auth when the token secret is missing
-          # or expired, then blob upload fails with 401. Pin the last stable
-          # legacy API-key CLI for unattended scheduled uploads.
-          pip install pandas requests kaggle==1.6.17
+          pip install pandas requests kaggle
 
       - name: Curl Required Files
         run: |
           curl -O https://raw.githubusercontent.com/jitendradara12/grid-load/master/scripts/fetch_yesterday.py
           curl -O https://raw.githubusercontent.com/jitendradara12/grid-load/master/data/dataset-metadata.json
+
       - name: Configure Kaggle Credentials
         run: |
           mkdir -p ~/.kaggle
-
-          USERNAME="${{ secrets.KAGGLE_USERNAME }}"
-          if [ -z "$USERNAME" ]; then
-            USERNAME="jitendradara12"
-          fi
-
-          if [ -z "${{ secrets.KAGGLE_KEY }}" ]; then
-            echo "KAGGLE_KEY secret is missing or empty"
-            exit 1
-          fi
-
-          echo "{\"username\":\"$USERNAME\",\"key\":\"${{ secrets.KAGGLE_KEY }}\"}" > ~/.kaggle/kaggle.json
-          chmod 600 ~/.kaggle/kaggle.json
-
-          python - <<'PY'
-          import json
-          from pathlib import Path
-
-          data = json.loads(Path.home().joinpath('.kaggle/kaggle.json').read_text())
-          assert data.get('username'), 'username missing from kaggle.json'
-          assert data.get('key'), 'key missing from kaggle.json'
-          print(f"Configured Kaggle API-key auth for user={data['username']!r}; key_length={len(data['key'])}")
-          PY
+          echo "${{ secrets.KAGGLE_TOKEN }}" > ~/.kaggle/access_token
+          chmod 600 ~/.kaggle/access_token
 
       - name: Download and Unzip Kaggle Dataset
-        run: |
-          kaggle datasets download -d jitendradara12/demand-met-from-sep25 --unzip
+        run: kaggle datasets download -d jitendradara12/demand-met-from-sep25 --unzip
 
       - name: Run Scraper
         run: python fetch_yesterday.py
 
       - name: Push Updated Data to Kaggle
-        run: |
-          kaggle datasets version -p . -m "Automated daily update for $(date +'%Y-%m-%d')"
+        run: kaggle datasets version -p . -m "Automated daily update for $(date +'%Y-%m-%d')"

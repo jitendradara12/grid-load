@@ -1,0 +1,42 @@
+name: Lightweight Daily Kaggle Update
+
+on:
+  schedule:
+    - cron: "0 1 * * *"
+  workflow_dispatch:
+
+jobs:
+  update-dataset:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pandas requests kaggle
+
+      - name: Curl Required Files
+        run: |
+          curl -O https://raw.githubusercontent.com/jitendradara12/grid-load/master/scripts/fetch_yesterday.py
+          curl -O https://raw.githubusercontent.com/jitendradara12/grid-load/master/data/dataset-metadata.json
+      - name: Download and Unzip Kaggle Dataset
+        env:
+          KAGGLE_USERNAME: jitendradara12
+          KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
+        run: |
+          kaggle datasets download -d jitendradara12/demand-met-from-sep25 --unzip
+
+      - name: Run Scraper
+        run: python fetch_yesterday.py
+
+      - name: Push Updated Data to Kaggle
+        env:
+          KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
+          KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
+        run: |
+          kaggle datasets version -p . -m "Automated daily update for $(date +'%Y-%m-%d')"

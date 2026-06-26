@@ -27,8 +27,13 @@ jobs:
       - name: Configure Kaggle Credentials
         run: |
           mkdir -p ~/.kaggle
-          echo '{"username":"${{ secrets.KAGGLE_USERNAME }}","key":"${{ secrets.KAGGLE_KEY }}"}' > ~/.kaggle/kaggle.json
-          chmod 600 ~/.kaggle/kaggle.json
+          if [ -n "${{ secrets.KAGGLE_API_TOKEN }}" ]; then
+            printf '%s' '${{ secrets.KAGGLE_API_TOKEN }}' > ~/.kaggle/access_token
+            chmod 600 ~/.kaggle/access_token
+          else
+            echo '{"username":"${{ secrets.KAGGLE_USERNAME }}","key":"${{ secrets.KAGGLE_KEY }}"}' > ~/.kaggle/kaggle.json
+            chmod 600 ~/.kaggle/kaggle.json
+          fi
 
       - name: Download and Unzip Kaggle Dataset
         run: |

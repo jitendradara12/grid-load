@@ -9,4 +9,7 @@ wheels/
 # Virtual environments
 .venv
 
-data/
+data/*
+
+#just exclude the json for kaggle
+!data/dataset-metadata.json

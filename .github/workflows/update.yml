@@ -22,13 +22,13 @@ jobs:
           python -m pip install --upgrade pip
           pip install pandas requests kaggle
 
+      - name: Download and Unzip Kaggle Dataset
+        run: kaggle datasets download -d jitendradara12/demand-met-from-sep25 --unzip
+
       - name: Curl Required Files
         run: |
           curl -O https://raw.githubusercontent.com/jitendradara12/grid-load/master/scripts/fetch_yesterday.py
           curl -O https://raw.githubusercontent.com/jitendradara12/grid-load/master/data/dataset-metadata.json
-
-      - name: Download and Unzip Kaggle Dataset
-        run: kaggle datasets download -d jitendradara12/demand-met-from-sep25 --unzip
 
       - name: Run Scraper
         run: python fetch_yesterday.py

@@ -39,3 +39,7 @@ else:
         f"Combined time series spans from {combined['datetime'].min()} to {combined['datetime'].max()}."
     )
     print(f"Total hourly rows: {len(combined)}")
+
+
+def get_train_dataframe():
+    return combined

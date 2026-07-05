@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 
 
-def features_main(df):
+def features_main(df, is_training=False):
     df = df.copy()
     new_cols = {}
     feature_cols = []
@@ -40,13 +40,16 @@ def features_main(df):
 
     all_features = feature_cols + ["is_weekend"] + time_cols
 
-    for h in range(1, 49):
-        new_cols[f"target_lead_{h}"] = df["value"].shift(-h)
-
-    new_df = pd.DataFrame(new_cols, index=df.index)
-    df = pd.concat([df[["datetime", "value"]], new_df], axis=1)
-
-    target_cols = [f"target_lead_{h}" for h in range(1, 49)]
-
-    clean_df = df.dropna().reset_index(drop=True)
-    return clean_df[all_features], clean_df[target_cols], all_features
+    if is_training:
+        for h in range(1, 49):
+            new_cols[f"target_lead_{h}"] = df["value"].shift(-h)
+        new_df = pd.DataFrame(new_cols, index=df.index)
+        df = pd.concat([df[["datetime", "value"]], new_df], axis=1)
+        target_cols = [f"target_lead_{h}" for h in range(1, 49)]
+        clean_df = df.dropna().reset_index(drop=True)
+        return clean_df[all_features], clean_df[target_cols], all_features
+    else:
+        new_df = pd.DataFrame(new_cols, index=df.index)
+        df = pd.concat([df[["datetime", "value"]], new_df], axis=1)
+        # For prediction, return only the last row of features (the current t)
+        return df.tail(1)[all_features], all_features

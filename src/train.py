@@ -17,7 +17,7 @@ def train_model():
     df = data_pipeline.get_train_dataframe()
 
     print("Building features...")
-    X, y, feature_names = features_main(df)
+    X, y, feature_names = features_main(df, is_training=True)
 
     data_dates = df["datetime"].iloc[336 : len(df) - 48].reset_index(drop=True)
 

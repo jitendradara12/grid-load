@@ -50,7 +50,7 @@ for st_date in tqdm(dates):
             for item in data:
                 ts = item.get("updated_on")
                 dt_object = datetime.fromtimestamp(ts / 1000) if ts else None
-                
+
                 day_records.append(
                     {
                         "formatted_date": st_date,
@@ -65,7 +65,9 @@ for st_date in tqdm(dates):
                 day_df = pd.DataFrame(day_records)
                 day_df.to_csv(daily_file, index=False)
         else:
-            print(f"\n[Warning] Date {st_date} returned status code {response.status_code}")
+            print(
+                f"\n[Warning] Date {st_date} returned status code {response.status_code}"
+            )
 
         time.sleep(0.69)
 

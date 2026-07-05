@@ -31,27 +31,33 @@ try:
                         "value": item.get("value_of_data"),
                     }
                 )
-            
+
             if day_records:
                 day_df = pd.DataFrame(day_records)
 
                 if os.path.exists(CSV_FILE):
                     master_df = pd.read_csv(CSV_FILE)
-                    
+
                     combined_df = pd.concat([master_df, day_df], ignore_index=True)
-                    
+
                     initial_rows = len(combined_df)
-                    combined_df.drop_duplicates(subset=['timestamp', 'metric'], keep='last', inplace=True)
+                    combined_df.drop_duplicates(
+                        subset=["timestamp", "metric"], keep="last", inplace=True
+                    )
                     final_rows = len(combined_df)
-                    
+
                     combined_df.to_csv(CSV_FILE, index=False)
-                    
+
                     duplicates_removed = initial_rows - final_rows
                     print(f"Success: Appended {len(day_df)} rows for {DATE}.")
                     if duplicates_removed > 0:
-                        print(f"Notice: Removed {duplicates_removed} duplicate rows (script likely ran multiple times today).")
+                        print(
+                            f"Notice: Removed {duplicates_removed} duplicate rows (script likely ran multiple times today)."
+                        )
                 else:
-                    print(f"[Error] {CSV_FILE} not found. The Kaggle download step may have failed.")
+                    print(
+                        f"[Error] {CSV_FILE} not found. The Kaggle download step may have failed."
+                    )
 
     else:
         print(f"API endpoint failed with status code: {response.status_code}")

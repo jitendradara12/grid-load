@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 
 
-def features_main(df, is_training=False):
+def features_main(df, is_training=True):
     df = df.copy()
     new_cols = {}
     feature_cols = []

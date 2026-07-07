@@ -7,6 +7,8 @@ on:
 
 permissions:
   contents: write
+  pages: write
+  id-token: write
 
 jobs:
   update-dataset:
@@ -52,3 +54,15 @@ jobs:
       - name: Push Updated Data to Kaggle
         if: env.DATA_HASH_BEFORE != env.DATA_HASH_AFTER
         run: uv run kaggle datasets version -p data -m "Automated daily update for $(date +'%Y-%m-%d')"
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './public'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

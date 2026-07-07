@@ -18,24 +18,23 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
 
       - name: Install Dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install pandas requests scikit-learn "kaggle==2.2.1" "kagglesdk==0.1.28"
+        run: uv sync
 
       - name: Download and Unzip Kaggle Dataset in /data
-        run: kaggle datasets download -d jitendradara12/demand-met-from-sep25 --unzip -p data
+        run: uv run kaggle datasets download -d jitendradara12/demand-met-from-sep25 --unzip -p data
 
       - name: Run Scraper
-        run: python scripts/fetch_yesterday.py
+        run: uv run python scripts/fetch_yesterday.py
+
+      - name: Clean Dataset
+        run: uv run python scripts/clean_datasets.py npp
 
       - name: Run Inference
-        run: python main.py predict
+        run: uv run python main.py predict
       # - name: Clean directory
       #   run: rm fetch_yesterday.py
 
@@ -48,4 +47,4 @@ jobs:
           git push
 
       - name: Push Updated Data to Kaggle
-        run: kaggle datasets version -p data -m "Automated daily update for $(date +'%Y-%m-%d')"
+        run: uv run kaggle datasets version -p data -m "Automated daily update for $(date +'%Y-%m-%d')"

@@ -1,4 +1,5 @@
 from datetime import date, datetime, timedelta
+import sys
 import pandas as pd
 import requests
 import os
@@ -16,7 +17,8 @@ try:
         data = response.json()
 
         if not data:
-            print(f"No data returned from API for {DATE}")
+            print(f"[Error] No data returned from API for {DATE}")
+            sys.exit(1)
         else:
             day_records = []
             for item in data:
@@ -58,9 +60,12 @@ try:
                     print(
                         f"[Error] {CSV_FILE} not found. The Kaggle download step may have failed."
                     )
+                    sys.exit(1)
 
     else:
-        print(f"API endpoint failed with status code: {response.status_code}")
+        print(f"[Error] API endpoint failed with status code: {response.status_code}")
+        sys.exit(1)
 
 except Exception as e:
     print(f"\n[Error] Failed to fetch or process data: {e}")
+    sys.exit(1)

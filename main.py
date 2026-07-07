@@ -14,7 +14,7 @@ def run_prediction():
     df = get_npp_dataframe()
     if df.empty:
         df = (
-            clean_npp_ds(NPP_PATH="demand_met_from_sep25.csv")
+            clean_npp_ds(NPP_PATH="data/demand_met_from_sep25.csv")
             .resample("h", on="datetime")["value"]
             .mean()
             .reset_index()
@@ -22,6 +22,10 @@ def run_prediction():
 
     # predict 48 hours
     preds = predict.predict_next_48h(df)
+
+    out_dir = "public/predictions"
+    os.makedirs(out_dir, exist_ok=True)
+    preds.to_json(f"{out_dir}/latest.json", orient="records", date_format="iso")
     print(preds)
 
 

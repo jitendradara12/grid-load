@@ -1,9 +1,12 @@
-name: Lightweight Daily Kaggle Update
+name: Daily Kaggle Update plus prediction
 
 on:
   schedule:
     - cron: "30 0 * * *"
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   update-dataset:
@@ -12,6 +15,9 @@ jobs:
       KAGGLE_API_TOKEN: ${{ secrets.KAGGLE_TOKEN }}
 
     steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -20,21 +26,26 @@ jobs:
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pandas requests "kaggle==2.2.1" "kagglesdk==0.1.28"
-          
-      - name: Download and Unzip Kaggle Dataset
-        run: kaggle datasets download -d jitendradara12/demand-met-from-sep25 --unzip
+          pip install pandas requests scikit-learn "kaggle==2.2.1" "kagglesdk==0.1.28"
 
-      - name: Curl Required Files
-        run: |
-          curl -O https://raw.githubusercontent.com/jitendradara12/grid-load/master/scripts/fetch_yesterday.py
-          curl -O https://raw.githubusercontent.com/jitendradara12/grid-load/master/data/dataset-metadata.json
+      - name: Download and Unzip Kaggle Dataset in /data
+        run: kaggle datasets download -d jitendradara12/demand-met-from-sep25 --unzip -p data
 
       - name: Run Scraper
-        run: python fetch_yesterday.py
+        run: python scripts/fetch_yesterday.py
 
-      - name: Clean directory
-        run: rm fetch_yesterday.py
+      - name: Run Inference
+        run: python main.py predict
+      # - name: Clean directory
+      #   run: rm fetch_yesterday.py
+
+      - name: Commit and Push Predictions
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/predictions/latest.json
+          git commit -m "chore: update predictions [skip ci]" || echo "No changes to commit"
+          git push
 
       - name: Push Updated Data to Kaggle
-        run: kaggle datasets version -p . -m "Automated daily update for $(date +'%Y-%m-%d')"
+        run: kaggle datasets version -p data -m "Automated daily update for $(date +'%Y-%m-%d')"

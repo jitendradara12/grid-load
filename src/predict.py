@@ -48,7 +48,7 @@ if __name__ == "__main__":
     if df.empty:
         # run clean_datasets manually (most probably running in cloud so the dataset will be at root)
         df = (
-            clean_npp_ds(NPP_PATH="demand_met_from_sep25.csv")
+            clean_npp_ds(NPP_PATH="data/demand_met_from_sep25.csv")
             .resample("h", on="datetime")["value"]
             .mean()
             .reset_index()

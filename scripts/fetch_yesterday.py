@@ -7,7 +7,7 @@ BASE_URL = "https://npp.gov.in/dashBoard/demandmet1chartdata"
 DATE = date.today() - timedelta(days=1)
 params = {"date": DATE}
 
-CSV_FILE = "demand_met_from_sep25.csv"
+CSV_FILE = "data/demand_met_from_sep25.csv"
 
 try:
     response = requests.get(BASE_URL, params=params, timeout=20)

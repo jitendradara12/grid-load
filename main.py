@@ -20,13 +20,30 @@ def run_prediction():
             .reset_index()
         )
 
+    # last 24h actuals
+    recent = df.tail(24)[["datetime", "value"]].copy()
+    recent["datetime"] = recent["datetime"].dt.strftime("%Y-%m-%dT%H:%M:%S")
+    actuals = recent.rename(columns={"value": "demand_mw"}).to_dict(orient="records")
+
     # predict 48 hours
     preds = predict.predict_next_48h(df)
+    preds["datetime"] = preds["datetime"].dt.strftime("%Y-%m-%dT%H:%M:%S")
+    forecasts = preds.rename(columns={"predicted_demand": "demand_mw"}).to_dict(orient="records")
+
+    import json
+    from datetime import datetime, timezone
+
+    output = {
+        "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "actuals": actuals,
+        "predictions": forecasts,
+    }
 
     out_dir = "public/predictions"
     os.makedirs(out_dir, exist_ok=True)
-    preds.to_json(f"{out_dir}/latest.json", orient="records", date_format="iso")
-    print(preds)
+    with open(f"{out_dir}/latest.json", "w") as f:
+        json.dump(output, f)
+    print(f"Wrote {len(actuals)} actuals + {len(forecasts)} predictions")
 
 
 def main():

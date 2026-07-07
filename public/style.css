@@ -1,0 +1,38 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: system-ui, sans-serif;
+  background: #0f0f0f;
+  color: #e0e0e0;
+  padding: 2rem;
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+h1 { font-size: 1.4rem; margin-bottom: 0.25rem; }
+
+#updated { font-size: 0.85rem; color: #888; margin-bottom: 1.5rem; }
+
+#stats {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.stat {
+  background: #1a1a1a;
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  flex: 1;
+  min-width: 120px;
+}
+
+.stat-label { font-size: 0.75rem; color: #888; }
+.stat-value { font-size: 1.2rem; font-weight: 600; }
+
+.chart-wrap {
+  background: #1a1a1a;
+  border-radius: 6px;
+  padding: 1rem;
+}

@@ -32,6 +32,7 @@ def get_npp_dataframe():
 
     npp_df["datetime"] = pd.to_datetime(npp_df["datetime"])
     npp_df = npp_df.resample("h", on="datetime")["value"].mean().reset_index()
+    npp_df["value"] = npp_df["value"].interpolate(method="linear").ffill().bfill()
     npp_df_filtered = npp_df[npp_df["datetime"] >= SPLIT_TIME]
 
     return npp_df_filtered.sort_values("datetime")

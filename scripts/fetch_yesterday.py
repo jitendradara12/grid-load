@@ -49,10 +49,14 @@ try:
                     )
                     final_rows = len(combined_df)
 
-                    combined_df.to_csv(CSV_FILE, index=False)
+                    if final_rows > len(master_df):
+                        combined_df.to_csv(CSV_FILE, index=False)
+                        new_rows_count = final_rows - len(master_df)
+                        print(f"Success: Appended {new_rows_count} new rows for {DATE}.")
+                    else:
+                        print(f"No new data to append for {DATE}.")
 
                     duplicates_removed = initial_rows - final_rows
-                    print(f"Success: Appended {len(day_df)} rows for {DATE}.")
                     if duplicates_removed > 0:
                         print(
                             f"Notice: Removed {duplicates_removed} duplicate rows (script likely ran multiple times today)."

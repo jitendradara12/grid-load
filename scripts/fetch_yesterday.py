@@ -1,4 +1,4 @@
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 import sys
 import pandas as pd
 import requests
@@ -9,6 +9,7 @@ DATE = date.today() - timedelta(days=1)
 params = {"date": DATE}
 
 CSV_FILE = "data/demand_met_from_sep25.csv"
+IST = timezone(timedelta(hours=5, minutes=30))
 
 try:
     response = requests.get(BASE_URL, params=params, timeout=20)
@@ -23,7 +24,7 @@ try:
             day_records = []
             for item in data:
                 ts = item.get("updated_on")
-                dt_object = datetime.fromtimestamp(ts / 1000) if ts else None
+                dt_object = datetime.fromtimestamp(ts / 1000, tz=IST).replace(tzinfo=None) if ts else None
                 day_records.append(
                     {
                         "formatted_date": DATE,

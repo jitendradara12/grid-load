@@ -20,11 +20,14 @@ def get_iced_dataframe():
 
 
 def get_npp_dataframe():
-    npp_df = pd.read_csv(NPP_PATH)
-
-    if npp_df.empty:
+    try:
+        npp_df = pd.read_csv(NPP_PATH)
+    except FileNotFoundError:
         print(f"WARNING: NPP dataset is not available at {NPP_PATH}\n")
         print("Skipping merge...\n")
+        return pd.DataFrame()
+
+    if npp_df.empty:
         return pd.DataFrame()
 
     npp_df["datetime"] = pd.to_datetime(npp_df["datetime"])

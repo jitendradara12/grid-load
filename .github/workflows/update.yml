@@ -27,24 +27,28 @@ jobs:
       - name: Download and Unzip Kaggle Dataset in /data
         run: uv run kaggle datasets download -d jitendradara12/demand-met-from-sep25 --unzip -p data
 
+      - name: Checksum before scrape
+        run: echo "DATA_HASH_BEFORE=$(sha256sum data/demand_met_from_sep25.csv | cut -d' ' -f1)" >> "$GITHUB_ENV"
+
       - name: Run Scraper
         run: uv run python scripts/fetch_yesterday.py
+
+      - name: Checksum after scrape
+        run: echo "DATA_HASH_AFTER=$(sha256sum data/demand_met_from_sep25.csv | cut -d' ' -f1)" >> "$GITHUB_ENV"
 
       - name: Clean Dataset
         run: uv run python scripts/clean_datasets.py npp
 
       - name: Run Inference
         run: uv run python main.py predict
-      # - name: Clean directory
-      #   run: rm fetch_yesterday.py
 
       - name: Commit and Push Predictions
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add public/predictions/latest.json
-          git commit -m "chore: update predictions [skip ci]" || echo "No changes to commit"
-          git push
+          git diff --cached --quiet && echo "No changes to commit" || (git commit -m "chore: update predictions [skip ci]" && git push)
 
       - name: Push Updated Data to Kaggle
+        if: env.DATA_HASH_BEFORE != env.DATA_HASH_AFTER
         run: uv run kaggle datasets version -p data -m "Automated daily update for $(date +'%Y-%m-%d')"

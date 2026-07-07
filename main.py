@@ -33,17 +33,24 @@ def run_prediction():
     import json
     from datetime import datetime, timezone
 
+    # ponytail: carry forward old predictions before overwriting
+    json_path = "public/predictions/latest.json"
+    prev_preds = []
+    if os.path.exists(json_path):
+        with open(json_path) as f:
+            prev_preds = json.load(f).get("predictions", [])
+
     output = {
         "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "actuals": actuals,
         "predictions": forecasts,
+        "previous_predictions": prev_preds,
     }
 
-    out_dir = "public/predictions"
-    os.makedirs(out_dir, exist_ok=True)
-    with open(f"{out_dir}/latest.json", "w") as f:
+    os.makedirs(os.path.dirname(json_path), exist_ok=True)
+    with open(json_path, "w") as f:
         json.dump(output, f)
-    print(f"Wrote {len(actuals)} actuals + {len(forecasts)} predictions")
+    print(f"Wrote {len(actuals)} actuals + {len(forecasts)} predictions + {len(prev_preds)} prev")
 
 
 def main():

@@ -2,12 +2,12 @@
   const res = await fetch("predictions/latest.json");
   const data = await res.json();
 
-  // Updated timestamp
   const updatedEl = document.getElementById("updated");
   updatedEl.textContent = "Last updated: " + new Date(data.generated_at).toLocaleString();
 
   const actuals = data.actuals;
   const preds = data.predictions;
+  const prevPreds = data.previous_predictions || [];
 
   // Stats from predictions
   const predVals = preds.map((d) => d.demand_mw);
@@ -37,37 +37,54 @@
       " " + d.getHours() + ":00";
   };
 
-  const labels = [...actuals, ...preds].map((d) => fmt(d.datetime));
+  const allPoints = [...actuals, ...preds];
+  const labels = allPoints.map((d) => fmt(d.datetime));
   const actualData = actuals.map((d) => d.demand_mw);
   const predData = new Array(actuals.length).fill(null).concat(predVals);
 
   // Bridge: connect last actual to first prediction
   predData[actuals.length - 1] = actualData[actualData.length - 1];
 
+  // ponytail: map previous predictions onto the timeline by datetime match
+  const prevMap = Object.fromEntries(prevPreds.map((d) => [d.datetime, d.demand_mw]));
+  const prevData = allPoints.map((d) => prevMap[d.datetime] ?? null);
+
+  const datasets = [
+    {
+      label: "Actual (24h)",
+      data: actualData,
+      borderColor: "#4fc3f7",
+      borderWidth: 2,
+      pointRadius: 0,
+      tension: 0.3,
+    },
+    {
+      label: "Forecast (48h)",
+      data: predData,
+      borderColor: "#ff8a65",
+      borderDash: [6, 3],
+      borderWidth: 2,
+      pointRadius: 0,
+      tension: 0.3,
+    },
+  ];
+
+  // Only add previous forecast line if there's overlap with current timeline
+  if (prevData.some((v) => v !== null)) {
+    datasets.push({
+      label: "Prev Forecast",
+      data: prevData,
+      borderColor: "#888",
+      borderDash: [3, 3],
+      borderWidth: 1.5,
+      pointRadius: 0,
+      tension: 0.3,
+    });
+  }
+
   new Chart(document.getElementById("chart"), {
     type: "line",
-    data: {
-      labels,
-      datasets: [
-        {
-          label: "Actual (24h)",
-          data: actualData,
-          borderColor: "#4fc3f7",
-          borderWidth: 2,
-          pointRadius: 0,
-          tension: 0.3,
-        },
-        {
-          label: "Forecast (48h)",
-          data: predData,
-          borderColor: "#ff8a65",
-          borderDash: [6, 3],
-          borderWidth: 2,
-          pointRadius: 0,
-          tension: 0.3,
-        },
-      ],
-    },
+    data: { labels, datasets },
     options: {
       responsive: true,
       interaction: { mode: "index", intersect: false },

@@ -9,6 +9,8 @@ MODEL_PATH = "models/demand_model.pkl"
 
 
 def predict_next_48h(df: pd.DataFrame) -> pd.DataFrame:
+    df = df.copy()
+    df["value"] = df["value"].interpolate(method="linear").ffill().bfill()
     min_time = df["datetime"].min()
     required_rows = 337
 
@@ -53,5 +55,6 @@ if __name__ == "__main__":
             .mean()
             .reset_index()
         )
+        df["value"] = df["value"].interpolate(method="linear").ffill().bfill()
 
     print(predict_next_48h(df).head())

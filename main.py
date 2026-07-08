@@ -19,6 +19,7 @@ def run_prediction():
             .mean()
             .reset_index()
         )
+        df["value"] = df["value"].interpolate(method="linear").ffill().bfill()
 
     # last 24h actuals
     recent = df.tail(24)[["datetime", "value"]].copy()

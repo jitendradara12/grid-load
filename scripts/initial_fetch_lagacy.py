@@ -1,7 +1,7 @@
 # data is already here so don't ping the servers again!
 # comment it when needed
-print("data is available in `data/` don't ping the poor servers _|_")
-exit()
+# print("data is available in `data/` don't ping the poor servers _|_")
+# exit()
 
 
 from datetime import datetime, timedelta
@@ -13,9 +13,9 @@ from tqdm import tqdm
 
 BASE_URL = "https://npp.gov.in/dashBoard/demandmet1chartdata"
 
-start_date = datetime(2025, 6, 25)
-end_date = datetime(2026, 6, 25)
-output_file = "data/demand_met_year.csv"
+start_date = datetime(2026, 7, 10)
+end_date = datetime(2026, 7, 12)
+output_file = "data/demand_met_from_sep25.csv"
 
 DAILY_DIR = Path("data/daily")
 DAILY_DIR.mkdir(parents=True, exist_ok=True)
@@ -78,18 +78,16 @@ for st_date in tqdm(dates):
 print("\nCompiling individual days into clean ML dataset...")
 all_files = sorted(DAILY_DIR.glob("demand_*.csv"))
 
-all_dfs = []
+all_dfs = [pd.read_csv(output_file)] if Path(output_file).exists() else []
 for f in all_files:
     if f.stat().st_size > 0:
         all_dfs.append(pd.read_csv(f))
 
 if all_dfs:
     df = pd.concat(all_dfs, ignore_index=True)
-
     df["datetime"] = pd.to_datetime(df["datetime"])
 
     df = df.drop_duplicates(subset=["datetime", "metric"]).reset_index(drop=True)
-
     df = df.sort_values(by="datetime").reset_index(drop=True)
 
     Path(output_file).parent.mkdir(parents=True, exist_ok=True)

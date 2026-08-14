@@ -24,7 +24,11 @@ try:
             day_records = []
             for item in data:
                 ts = item.get("updated_on")
-                dt_object = datetime.fromtimestamp(ts / 1000, tz=IST).replace(tzinfo=None) if ts else None
+                dt_object = (
+                    datetime.fromtimestamp(ts / 1000, tz=IST).replace(tzinfo=None)
+                    if ts
+                    else None
+                )
                 day_records.append(
                     {
                         "formatted_date": DATE,
@@ -52,7 +56,9 @@ try:
                     if final_rows > len(master_df):
                         combined_df.to_csv(CSV_FILE, index=False)
                         new_rows_count = final_rows - len(master_df)
-                        print(f"Success: Appended {new_rows_count} new rows for {DATE}.")
+                        print(
+                            f"Success: Appended {new_rows_count} new rows for {DATE}."
+                        )
                     else:
                         print(f"No new data to append for {DATE}.")
 

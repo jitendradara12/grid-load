@@ -29,7 +29,9 @@ def run_prediction():
     # predict 48 hours
     preds = predict.predict_next_48h(df)
     preds["datetime"] = preds["datetime"].dt.strftime("%Y-%m-%dT%H:%M:%S")
-    forecasts = preds.rename(columns={"predicted_demand": "demand_mw"}).to_dict(orient="records")
+    forecasts = preds.rename(columns={"predicted_demand": "demand_mw"}).to_dict(
+        orient="records"
+    )
 
     import json
     from datetime import datetime, timezone
@@ -51,7 +53,9 @@ def run_prediction():
     os.makedirs(os.path.dirname(json_path), exist_ok=True)
     with open(json_path, "w") as f:
         json.dump(output, f)
-    print(f"Wrote {len(actuals)} actuals + {len(forecasts)} predictions + {len(prev_preds)} prev")
+    print(
+        f"Wrote {len(actuals)} actuals + {len(forecasts)} predictions + {len(prev_preds)} prev"
+    )
 
 
 def main():

@@ -67,10 +67,8 @@ def main():
     )
     args = parser.parse_args()
 
-    if args.action == "train":
-        train.train_model()
-    elif args.action == "predict":
-        run_prediction()
+    actions = {"train": train.train_model, "predict": run_prediction}
+    actions[args.action]()
 
 
 if __name__ == "__main__":

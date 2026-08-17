@@ -1,3 +1,5 @@
+import sys
+from pathlib import Path
 import pandas as pd
 
 NPP_PATH = "data/temp/npp_clean.csv"
@@ -6,52 +8,39 @@ SPLIT_TIME = "2025-12-30 12:00:00"
 
 
 def get_iced_dataframe():
-    iced_df = pd.read_csv(ICED_PATH)
+    if not Path(ICED_PATH).exists():
+        sys.exit(f"Put ICED dataset in path: {ICED_PATH}\n\nHINT: Run scripts/clean_datasets.py manually\n")
 
-    if iced_df.empty:
-        print(f"Put ICED dataset in path: {ICED_PATH}\n")
-        print("HINT: Run scripts/clean_datasets.py manually\n")
-        exit()
+    df = pd.read_csv(ICED_PATH, parse_dates=["datetime"])
+    if df.empty:
+        sys.exit(f"Put ICED dataset in path: {ICED_PATH}\n\nHINT: Run scripts/clean_datasets.py manually\n")
 
-    iced_df["datetime"] = pd.to_datetime(iced_df["datetime"])
-    iced_df_filtered = iced_df[iced_df["datetime"] < SPLIT_TIME]
-
-    return iced_df_filtered.sort_values("datetime")
+    return df[df["datetime"] < SPLIT_TIME].sort_values("datetime")
 
 
 def get_npp_dataframe():
-    try:
-        npp_df = pd.read_csv(NPP_PATH)
-    except FileNotFoundError:
-        print(f"WARNING: NPP dataset is not available at {NPP_PATH}\n")
-        print("Skipping merge...\n")
+    if not Path(NPP_PATH).exists():
+        print(f"WARNING: NPP dataset is not available at {NPP_PATH}\n\nSkipping merge...\n")
         return pd.DataFrame()
 
-    if npp_df.empty:
+    df = pd.read_csv(NPP_PATH, parse_dates=["datetime"])
+    if df.empty:
         return pd.DataFrame()
 
-    npp_df["datetime"] = pd.to_datetime(npp_df["datetime"])
-    npp_df = npp_df.resample("h", on="datetime")["value"].mean().reset_index()
-    npp_df["value"] = npp_df["value"].interpolate(method="linear").ffill().bfill()
-    npp_df_filtered = npp_df[npp_df["datetime"] >= SPLIT_TIME]
-
-    return npp_df_filtered.sort_values("datetime")
+    df = df.resample("h", on="datetime")["value"].mean().interpolate().ffill().bfill().reset_index()
+    return df[df["datetime"] >= SPLIT_TIME].sort_values("datetime")
 
 
 def get_train_dataframe():
-    iced_df_filtered = get_iced_dataframe()
-    npp_df_filtered = get_npp_dataframe()
+    iced = get_iced_dataframe()
+    npp = get_npp_dataframe()
 
-    if not npp_df_filtered.empty:
-        combined = (
-            pd.concat([iced_df_filtered, npp_df_filtered])
-            .sort_values("datetime")
-            .reset_index(drop=True)
-        )
-    else:
-        combined = iced_df_filtered
-
-    combined["value"] = combined["value"].interpolate(method="linear").ffill().bfill()
+    combined = (
+        pd.concat([iced, npp], ignore_index=True).sort_values("datetime").reset_index(drop=True)
+        if not npp.empty
+        else iced
+    )
+    combined["value"] = combined["value"].interpolate().ffill().bfill()
 
     print(
         f"Combined time series spans from {combined['datetime'].min()} to {combined['datetime'].max()}."

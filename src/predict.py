@@ -1,9 +1,7 @@
-import pandas as pd
 import pickle
+import pandas as pd
 
-from scripts.clean_datasets import clean_npp_ds
-from data_pipeline import get_npp_dataframe
-from features import features_main
+from src.features import features_main
 
 MODEL_PATH = "models/demand_model.pkl"
 
@@ -11,44 +9,34 @@ MODEL_PATH = "models/demand_model.pkl"
 def predict_next_48h(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
     df["value"] = df["value"].interpolate(method="linear").ffill().bfill()
-    min_time = df["datetime"].min()
-    required_rows = 337
 
-    if len(df) < required_rows:  # add padding then
-        pad_size = required_rows - len(df)
-
+    if len(df) < 337:
         pad_dates = pd.date_range(
-            end=min_time - pd.Timedelta(hours=1), periods=pad_size, freq="h"
+            end=df["datetime"].min() - pd.Timedelta(hours=1),
+            periods=337 - len(df),
+            freq="h",
         )
-        # Repeat the first value in the series to fill the pad
         pad_df = pd.DataFrame({"datetime": pad_dates, "value": df["value"].iloc[0]})
-        # Combine pad and original df
-        df = pd.concat([pad_df, df]).sort_values("datetime").reset_index(drop=True)
+        df = pd.concat([pad_df, df], ignore_index=True)
 
-    X_pred, feature_names = features_main(df, is_training=False)
+    X_pred, _ = features_main(df, is_training=False)
 
     with open(MODEL_PATH, "rb") as f:
-        saved_data = pickle.load(f)
-        model = saved_data["model"]
-        saved_features = saved_data["feature_names"]
+        saved = pickle.load(f)
 
-    # Align feature columns & training order
-    X_pred = X_pred[saved_features]
-
-    preds = model.predict(X_pred)[0]
-
-    max_time = df["datetime"].max()
+    preds = saved["model"].predict(X_pred[saved["feature_names"]])[0]
     pred_dates = pd.date_range(
-        start=max_time + pd.Timedelta(hours=1), periods=48, freq="h"
+        df["datetime"].max() + pd.Timedelta(hours=1), periods=48, freq="h"
     )
     return pd.DataFrame({"datetime": pred_dates, "predicted_demand": preds})
 
 
 if __name__ == "__main__":
-    df = get_npp_dataframe()
+    from src.data_pipeline import get_npp_dataframe
+    from scripts.clean_datasets import clean_npp_ds
 
+    df = get_npp_dataframe()
     if df.empty:
-        # run clean_datasets manually (most probably running in cloud so the dataset will be at root)
         df = (
             clean_npp_ds(NPP_PATH="data/demand_met_from_sep25.csv")
             .resample("h", on="datetime")["value"]

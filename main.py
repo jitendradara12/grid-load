@@ -1,16 +1,17 @@
-import sys
-import os
 import argparse
+import json
+from datetime import datetime, timezone
+from pathlib import Path
 
-sys.path.append(os.path.join(os.path.dirname(__file__), "src"))
-
-import train
-import predict
-from data_pipeline import get_npp_dataframe
 from scripts.clean_datasets import clean_npp_ds
+from src.data_pipeline import get_npp_dataframe
+from src.predict import predict_next_48h
+from src.train import train_model
+
+JSON_PATH = Path("public/predictions/latest.json")
 
 
-def run_prediction():
+def load_npp_data():
     df = get_npp_dataframe()
     if df.empty:
         df = (
@@ -20,27 +21,27 @@ def run_prediction():
             .reset_index()
         )
         df["value"] = df["value"].interpolate(method="linear").ffill().bfill()
+    return df
 
-    # last 24h actuals
-    recent = df.tail(24)[["datetime", "value"]].copy()
-    recent["datetime"] = recent["datetime"].dt.strftime("%Y-%m-%dT%H:%M:%S")
-    actuals = recent.rename(columns={"value": "demand_mw"}).to_dict(orient="records")
 
-    # predict 48 hours
-    preds = predict.predict_next_48h(df)
-    preds["datetime"] = preds["datetime"].dt.strftime("%Y-%m-%dT%H:%M:%S")
-    forecasts = preds.rename(columns={"predicted_demand": "demand_mw"}).to_dict(
-        orient="records"
-    )
+def run_prediction():
+    df = load_npp_data()
 
-    import json
-    from datetime import datetime, timezone
+    recent = df.tail(24)
+    actuals = [
+        {"datetime": dt.strftime("%Y-%m-%dT%H:%M:%S"), "demand_mw": val}
+        for dt, val in zip(recent["datetime"], recent["value"])
+    ]
 
-    # ponytail: carry forward old predictions before overwriting
-    json_path = "public/predictions/latest.json"
+    preds = predict_next_48h(df)
+    forecasts = [
+        {"datetime": dt.strftime("%Y-%m-%dT%H:%M:%S"), "demand_mw": val}
+        for dt, val in zip(preds["datetime"], preds["predicted_demand"])
+    ]
+
     prev_preds = []
-    if os.path.exists(json_path):
-        with open(json_path) as f:
+    if JSON_PATH.exists():
+        with open(JSON_PATH) as f:
             prev_preds = json.load(f).get("predictions", [])
 
     output = {
@@ -50,9 +51,10 @@ def run_prediction():
         "previous_predictions": prev_preds,
     }
 
-    os.makedirs(os.path.dirname(json_path), exist_ok=True)
-    with open(json_path, "w") as f:
+    JSON_PATH.parent.mkdir(parents=True, exist_ok=True)
+    with open(JSON_PATH, "w") as f:
         json.dump(output, f)
+
     print(
         f"Wrote {len(actuals)} actuals + {len(forecasts)} predictions + {len(prev_preds)} prev"
     )
@@ -67,7 +69,7 @@ def main():
     )
     args = parser.parse_args()
 
-    actions = {"train": train.train_model, "predict": run_prediction}
+    actions = {"train": train_model, "predict": run_prediction}
     actions[args.action]()
 
 

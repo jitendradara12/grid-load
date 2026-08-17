@@ -1,41 +1,27 @@
 import pandas as pd
 
+LAGS = (*range(24), 47, 48, 71, 72, 167, 168, 335, 336)
 
-def features_main(df, is_training=True):
-    df = df.copy()
-    lags = list(range(24)) + [47, 48, 71, 72, 167, 168, 335, 336]
-    new_cols = {f"lag_{lag}": df["value"].shift(lag) for lag in lags}
-    hour = df["datetime"].dt.hour
-    dayofweek = df["datetime"].dt.dayofweek
-    month = df["datetime"].dt.month
-    is_weekend = dayofweek.isin([5, 6]).astype(int)
 
-    new_cols["is_weekend"] = is_weekend
-    new_cols.update(
-        {
-            **{f"hour_{h}": (hour == h).astype(int) for h in range(1, 24)},
-            **{f"dayofweek_{d}": (dayofweek == d).astype(int) for d in range(1, 7)},
-            **{f"month_{m}": (month == m).astype(int) for m in range(2, 13)},
-        }
-    )
-    new_cols.update(
-        {
-            f"hour_{h}_weekend": new_cols[f"hour_{h}"] * is_weekend
-            for h in range(1, 24)
-        }
-    )
-    all_features = list(new_cols)
+def features_main(df: pd.DataFrame, is_training: bool = True):
+    dt = df["datetime"].dt
+    hour, dow, month = dt.hour, dt.dayofweek, dt.month
+    is_weekend = dow.isin([5, 6]).astype(int)
+
+    cols = {f"lag_{k}": df["value"].shift(k) for k in LAGS}
+    cols["is_weekend"] = is_weekend
+    cols |= {f"hour_{h}": (hour == h).astype(int) for h in range(1, 24)}
+    cols |= {f"dayofweek_{d}": (dow == d).astype(int) for d in range(1, 7)}
+    cols |= {f"month_{m}": (month == m).astype(int) for m in range(2, 13)}
+    cols |= {f"hour_{h}_weekend": cols[f"hour_{h}"] * is_weekend for h in range(1, 24)}
+
+    feature_names = list(cols)
 
     if is_training:
-        targets = {f"target_lead_{h}": df["value"].shift(-h) for h in range(1, 49)}
-        new_cols.update(targets)
-        target_cols = [f"target_lead_{h}" for h in range(1, 49)]
-    new_df = pd.DataFrame(new_cols, index=df.index)
-    df = pd.concat([df[["datetime", "value"]], new_df], axis=1)
+        target_names = [f"target_lead_{h}" for h in range(1, 49)]
+        cols |= {col: df["value"].shift(-h) for h, col in enumerate(target_names, 1)}
+        clean = pd.DataFrame(cols).dropna().reset_index(drop=True)
+        return clean[feature_names], clean[target_names], feature_names
 
-    if is_training:
-        clean_df = df.dropna().reset_index(drop=True)
-        return clean_df[all_features], clean_df[target_cols], all_features
-
-    # For prediction, return only the last row of features (the current t)
-    return df.tail(1)[all_features], all_features
+    feat_df = pd.DataFrame(cols, index=df.index)
+    return feat_df.tail(1), feature_names

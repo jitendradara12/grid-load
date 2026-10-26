@@ -26,8 +26,8 @@ jobs:
       - name: Install Dependencies
         run: uv sync
 
-      - name: Download and Unzip Kaggle Dataset in /data
-        run: uv run kaggle datasets download -d jitendradara12/demand-met-from-sep25 --unzip -p data
+      - name: Download Kaggle Dataset in /data
+        run: uv run kaggle datasets download -d jitendradara12/demand-met-from-sep25 -f demand_met_from_sep25.csv -p data
 
       - name: Checksum before scrape
         run: echo "DATA_HASH_BEFORE=$(sha256sum data/demand_met_from_sep25.csv | cut -d' ' -f1)" >> "$GITHUB_ENV"
